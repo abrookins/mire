@@ -5,21 +5,16 @@
   (:use [clojure.contrib.io :only [reader writer]]
         [clojure.contrib.server-socket :only [create-server]]))
 
-(defn- cleanup []
+(defn- cleanup
   "Drop all inventory and remove player from room and player list."
+  []
   (dosync
-   (doseq [item @*inventory*]
-     (discard item))
-   (commute player-streams dissoc *player-name*)
-   (commute (:inhabitants @*current-room*)
-            disj *player-name*)))
-
-(defn- get-unique-player-name [name]
-  (if (@player-streams name)
-    (do (print "That name is in use; try again: ")
-        (flush)
-        (recur (read-line)))
-    name))
+   (doseq [item @(:inventory @*player*)]
+     (if-not (empty? item)
+       (discard item)))
+   (commute *player-streams* dissoc (:name @*player*))
+   (commute (:inhabitants @(:current-room @*player*))
+            disj @*player*)))
 
 (defn- mire-handle-client [in out]
   (binding [*in* (reader in)
@@ -28,20 +23,18 @@
     ;; We have to nest this in another binding call instead of using
     ;; the one above so *in* and *out* will be bound to the socket
     (print "\nWhat is your name? ") (flush)
-    (binding [*player-name* nil
-              *current-room* (ref (rooms :start))
-              *inventory* (ref #{})]
+    (binding [*player* (ref (make-player))]
       (dosync
-       (set! *player-name* (get-unique-player-name (read-line)))
-       (commute (:inhabitants @*current-room*) conj *player-name*)
-       (commute player-streams assoc *player-name* *out*))
+       (alter *player* merge {:name (get-unique-player-name (read-line))})
+       (commute (:inhabitants @(:current-room @*player*)) conj (:name @*player*))
+       (commute *player-streams* assoc (:name @*player*) *out*))
 
-      (println (look)) (print prompt) (flush)
+      (println (look)) (print (:prompt @*player*)) (flush)
 
       (try (loop [input (read-line)]
              (when input
                (println (execute input))
-               (print prompt) (flush)
+               (print (:prompt @*player*)) (flush)
                (recur (read-line))))
            (finally (cleanup))))))
 

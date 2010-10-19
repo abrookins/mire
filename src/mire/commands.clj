@@ -1,35 +1,35 @@
 (ns mire.commands
   (:use [mire.rooms :only [rooms room-contains?]]
-        [mire.player])
+        [mire.player]
+        [mire.util :as util])
   (:use [clojure.contrib.string :only [join]]))
-
-(defn move-between-refs
-  "Move one instance of obj between from and to. Must call in a transaction."
-  [obj from to]
-  (alter from disj obj)
-  (alter to conj obj))
 
 ;; Command functions
 
+(defn short-description
+  "Print the short description of a thing."
+  [target]
+  (join "\n" (map #(str (:short-description %)) target)))
+
 (defn look "Get a description of the surrounding environs and its contents."
   []
-  (str (:desc @*current-room*)
-       "\nExits: " (keys @(:exits @*current-room*)) "\n"
-       (join "\n" (map #(str "There is " % " here.\n")
-                           @(:items @*current-room*)))))
+  (str (:desc @(:current-room @*player*))
+       "\nExits: " (keys @(:exits @(:current-room @*player*))) "\n"
+       (short-description @(:items @(:current-room @*player*)))
+       (short-description @(:inhabitants @(:current-room @*player*)))))
 
 (defn move
   "\"♬ We gotta get out of this place... ♪\" Give a direction."
   [direction]
   (dosync
-   (let [target-name ((:exits @*current-room*) (keyword direction))
+   (let [target-name ((:exits @(:current-room @*player*)) (keyword direction))
          target (rooms target-name)]
      (if target
        (do
-         (move-between-refs *player-name*
-                            (:inhabitants @*current-room*)
+         (util/move-between-refs (:name @*player*)
+                            (:inhabitants @(:current-room @*player*))
                             (:inhabitants target))
-         (ref-set *current-room* target)
+         (ref-set (:current-room @*player*) target)
          (look))
        "You can't go that way."))))
 
@@ -37,11 +37,11 @@
   "Pick something up."
   [thing]
   (dosync
-   (if (room-contains? @*current-room* thing)
-     (do (move-between-refs (keyword thing)
-                            (:items @*current-room*)
-                            *inventory*)
-         (str "You picked up the " thing "."))
+   (if (room-contains? @(:current-room @*player*) thing)
+     (do (util/move-between-refs (keyword thing)
+                            (:items @(:current-room @*player*))
+                            (:inventory @*player*)
+         (str "You picked up the " thing ".")))
      (str "There isn't any " thing " here."))))
 
 (defn discard
@@ -49,9 +49,9 @@
   [thing]
   (dosync
    (if (carrying? thing)
-     (do (move-between-refs (keyword thing)
-                            *inventory*
-                            (:items @*current-room*))
+     (do (util/move-between-refs (keyword thing)
+                            (:inventory @*player*)
+                            (:items @(:current-room @*player*)))
          (str "You dropped the " thing "."))
      (str "You're not carrying a " thing "."))))
 
@@ -59,12 +59,12 @@
   "See what you've got."
   []
   (str "You are carrying:\n"
-       (join "\n"  @*inventory*)))
+       (join "\n"  @(:inventory @*player*))))
 
 (defn detect
   "If you have the detector, you can see which room an item is in."
   [item]
-  (if (@*inventory* :detector)
+  (if (@(:inventory @*player*) :detector)
     (if-let [room (first (filter #((:items %) (keyword item))
                                  (vals rooms)))]
       (str item " is in " (:name room))
@@ -75,10 +75,11 @@
   "Say something out loud so everyone in the room can hear."
   [& words]
   (let [message (join " " words)]
-    (doseq [inhabitant (disj @(:inhabitants @*current-room*) *player-name*)]
-      (binding [*out* (player-streams inhabitant)]
+    (doseq [inhabitant
+            (disj @(:inhabitants @(:current-room @*player*)) (:name @*player*))]
+      (binding [*out* (@*player-streams* inhabitant)]
         (println message)
-        (println prompt)))
+        (println (:prompt @*player*))))
     (str "You said " message)))
 
 (defn help
