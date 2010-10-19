@@ -21,7 +21,7 @@
 (defn make-player
   "Create a new player."
   []
-  (Player. "Stuff"
+  (Player. nil
            (ref (rooms :start))
            (ref #{})
            default-prompt))
