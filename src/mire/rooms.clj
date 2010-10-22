@@ -1,6 +1,13 @@
-(ns mire.rooms)
+(ns mire.rooms
+  (:require [mire.items])
+  (:import [mire.items Item]))
 
 (def rooms {})
+
+(defn- load-items
+  "Create item records from maps stored in a room file."
+  [items]
+  (map #(Item. (:name %) (:short-description %) (:long-description %)) items))
 
 (defn load-room [rooms file]
   (let [room (read-string (slurp (.getAbsolutePath file)))]
@@ -9,9 +16,9 @@
            {:name (keyword (.getName file))
             :desc (:desc room)
             :exits (ref (:exits room))
-            :items (ref (or (:items room) []))
-            :inhabitants (ref #{})}})))
-
+            :items (ref (or (load-items (:items room)) []))
+            :inhabitants (ref {})}})))
+  
 (defn load-rooms
   "Given a dir, return a map with an entry corresponding to each file
   in it. Files should be maps containing room data."

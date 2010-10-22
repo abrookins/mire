@@ -1,22 +1,31 @@
 (ns mire.commands
   (:use [mire.rooms :only [rooms room-contains?]]
-        [mire.player]
+        [mire.player :only [carrying? *player* *player-streams*]]
+        [mire.protocols :as protocols]
         [mire.util :as util])
   (:use [clojure.contrib.string :only [join]]))
 
-;; Command functions
+(defmulti -short-description
+  "Call short-description on each item in a collection. Dispatch on
+  the class of the collection passed in."
+  #(type %))
 
-(defn short-description
-  "Print the short description of a thing."
-  [target]
-  (join "\n" (map #(str (:short-description %)) target)))
+(defmethod -short-description :default
+  [col]
+  (join "\n" (map #(short-description %) col)))
+
+(defmethod -short-description clojure.lang.PersistentArrayMap
+  [col] 
+  (join "\n" (map #(short-description %) (vals col))))
+  
+;; Command functions
 
 (defn look "Get a description of the surrounding environs and its contents."
   []
   (str (:desc @(:current-room @*player*))
        "\nExits: " (keys @(:exits @(:current-room @*player*))) "\n"
-       (short-description @(:items @(:current-room @*player*)))
-       (short-description @(:inhabitants @(:current-room @*player*)))))
+       (-short-description @(:items @(:current-room @*player*)))
+       (-short-description @(:inhabitants @(:current-room @*player*)))))
 
 (defn move
   "\"♬ We gotta get out of this place... ♪\" Give a direction."
@@ -26,7 +35,7 @@
          target (rooms target-name)]
      (if target
        (do
-         (util/move-between-refs (:name @*player*)
+         (util/move-between-refs (:name @*player*) @*player*
                             (:inhabitants @(:current-room @*player*))
                             (:inhabitants target))
          (ref-set (:current-room @*player*) target)
@@ -76,7 +85,7 @@
   [& words]
   (let [message (join " " words)]
     (doseq [inhabitant
-            (disj @(:inhabitants @(:current-room @*player*)) (:name @*player*))]
+            (dissoc @(:inhabitants @(:current-room @*player*)) (:name @*player*))]
       (binding [*out* (@*player-streams* inhabitant)]
         (println message)
         (println (:prompt @*player*))))

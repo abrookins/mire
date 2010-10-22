@@ -14,7 +14,7 @@
        (discard item)))
    (commute *player-streams* dissoc (:name @*player*))
    (commute (:inhabitants @(:current-room @*player*))
-            disj @*player*)))
+            dissoc (:name @*player*))))
 
 (defn- mire-handle-client [in out]
   (binding [*in* (reader in)
@@ -26,7 +26,7 @@
     (binding [*player* (ref (make-player))]
       (dosync
        (alter *player* merge {:name (get-unique-player-name (read-line))})
-       (commute (:inhabitants @(:current-room @*player*)) conj (:name @*player*))
+       (commute (:inhabitants @(:current-room @*player*)) assoc (:name @*player*) @*player*)
        (commute *player-streams* assoc (:name @*player*) *out*))
 
       (println (look)) (print (:prompt @*player*)) (flush)
@@ -41,6 +41,7 @@
 (defn -main
   ([port dir]
      (add-rooms dir)
+     ;; TODO: Make this easier to shut down. 
      (defonce server (create-server (Integer. port) mire-handle-client))
      (println "Launching Mire server on port" port))
   ([port] (-main port "resources/rooms"))

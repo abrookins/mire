@@ -1,11 +1,22 @@
 (ns mire.player
-  (:use [mire.rooms :only [rooms]]))
+  (:use [mire.rooms :only [rooms]])
+  (:use [mire.protocols :as protocols])
+  (:use [clojure.contrib.string :only [join]]))
+
+(def *player* (ref {}))
 
 (def default-prompt "> ")
   
 (def *player-streams* (ref {}))
 
-(defrecord Player [name current-room inventory prompt])
+(defrecord Player [name current-room inventory prompt description]
+  protocols/Visible
+  (short-description
+   [player] 
+   (str (:name player)))
+  (long-description
+   [player] 
+   (str (:description player))))
 
 (defn carrying?
   [thing player]
@@ -24,8 +35,5 @@
   (Player. nil
            (ref (rooms :start))
            (ref #{})
-           default-prompt))
-
-;; Global player definition
-
-(def *player* (ref {}))
+           default-prompt
+           nil))
