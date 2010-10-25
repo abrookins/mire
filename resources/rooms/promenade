@@ -1,3 +1,9 @@
 {:desc "The promenade stretches out before you."
  :exits {:west :hallway}
- :items #{:bunny :turtle}}
+ :item-definitions [{:name :bunny
+                   :short-description "a bunny"
+                   :long-description "a bunny"}
+                   {:name :turtle
+                   :short-description "a turtle"
+                   :long-description "a turtle"}]
+ :items {:bunny 1 :turtle 2}}

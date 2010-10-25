@@ -1,3 +1,4 @@
 {:desc "You are in a cramped closet."
  :exits {:south :start}
- :items [{:name :keys :short-description "keys" long-description "keys"}]}
+ :item-definitions [{:name :keys :short-description "keys" long-description "keys"}]
+ :items {:keys 1}}

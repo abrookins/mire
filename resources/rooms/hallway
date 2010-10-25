@@ -1,3 +1,4 @@
 {:desc "You are in a long, low-lit hallway that turns to the east."
- :items [{:short-description "the detector"}]
+ :items {:detector 1}
+ :item-definitions [{:name :detector :short-description "the detector" :long-description "the detector"}]
  :exits {:north :start :east :promenade} }                            

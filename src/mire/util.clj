@@ -8,4 +8,3 @@
   ([key obj from to]
      (alter from dissoc key obj)
      (alter to assoc key obj)))
-

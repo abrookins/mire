@@ -9,6 +9,7 @@
   
 (def *player-streams* (ref {}))
 
+; Items are a map from keyword to quantity.
 (defrecord Player [name current-room inventory prompt description]
   protocols/Visible
   (short-description
@@ -34,6 +35,6 @@
   []
   (Player. nil
            (ref (rooms :start))
-           (ref #{})
+           (ref {})
            default-prompt
            nil))

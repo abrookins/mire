@@ -2,30 +2,26 @@
   (:use [mire.rooms :only [rooms room-contains?]]
         [mire.player :only [carrying? *player* *player-streams*]]
         [mire.protocols :as protocols]
-        [mire.util :as util])
+        [mire.util :as util]
+        [mire.items :only [*items*]])
   (:use [clojure.contrib.string :only [join]]))
 
-(defmulti -short-description
-  "Call short-description on each item in a collection. Dispatch on
-  the class of the collection passed in."
-  #(type %))
+(defn -short-description
+  "Call short-description on each item in a collection.  Call
+  lookup-fn to find the target object given a key."
+  [lookup-fn col]
+  (join "\n" (map #(short-description (lookup-fn %)) col)))
 
-(defmethod -short-description :default
-  [col]
-  (join "\n" (map #(short-description %) col)))
-
-(defmethod -short-description clojure.lang.PersistentArrayMap
-  [col] 
-  (join "\n" (map #(short-description %) (vals col))))
-  
 ;; Command functions
 
 (defn look "Get a description of the surrounding environs and its contents."
   []
   (str (:desc @(:current-room @*player*))
        "\nExits: " (keys @(:exits @(:current-room @*player*))) "\n"
-       (-short-description @(:items @(:current-room @*player*)))
-       (-short-description @(:inhabitants @(:current-room @*player*)))))
+       (-short-description
+        #(@*items* %) (keys @(:items @(:current-room @*player*))))
+       (-short-description ;; TODO: Players should follow items pattern.
+        #(identity %) (vals @(:inhabitants @(:current-room @*player*))))))
 
 (defn move
   "\"♬ We gotta get out of this place... ♪\" Give a direction."
