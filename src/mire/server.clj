@@ -7,14 +7,14 @@
 
 (defn- cleanup
   "Drop all inventory and remove player from room and player list."
-  []
+  [player]
   (dosync
-   (doseq [item @(:inventory @*player*)]
+   (doseq [item @(:inventory @player)]
      (if-not (empty? item)
        (discard item)))
-   (commute *player-streams* dissoc (:name @*player*))
-   (commute (:inhabitants @(:current-room @*player*))
-            dissoc (:name @*player*))))
+   (commute *player-streams* dissoc (:name @player))
+   (commute (:inhabitants @(:current-room @player))
+            dissoc (:name @player))))
 
 (defn- mire-handle-client [in out]
   (binding [*in* (reader in)
@@ -23,20 +23,20 @@
     ;; We have to nest this in another binding call instead of using
     ;; the one above so *in* and *out* will be bound to the socket
     (print "\nWhat is your name? ") (flush)
-    (binding [*player* (ref (make-player))]
+    (let [player (ref (make-player))]
       (dosync
-       (alter *player* merge {:name (get-unique-player-name (read-line))})
-       (commute (:inhabitants @(:current-room @*player*)) assoc (:name @*player*) @*player*)
-       (commute *player-streams* assoc (:name @*player*) *out*))
+       (alter player merge {:name (get-unique-player-name (read-line))})
+       (commute (:inhabitants @(:current-room @player)) assoc (:name @player) @player)
+       (commute *player-streams* assoc (:name @player) *out*))
 
-      (println (look)) (print (:prompt @*player*)) (flush)
+      (println (look player)) (print (:prompt @player)) (flush)
 
       (try (loop [input (read-line)]
              (when input
-               (println (execute input))
-               (print (:prompt @*player*)) (flush)
+               (println (execute player input))
+               (print (:prompt @player)) (flush)
                (recur (read-line))))
-           (finally (cleanup))))))
+           (finally (cleanup player))))))
 
 (defn -main
   ([port dir]

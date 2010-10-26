@@ -3,8 +3,6 @@
   (:use [mire.protocols :as protocols])
   (:use [clojure.contrib.string :only [join]]))
 
-(def *player* (ref {}))
-
 (def default-prompt "> ")
   
 (def *player-streams* (ref {}))
@@ -21,7 +19,7 @@
 
 (defn carrying?
   [thing player]
-  (contains? @(:inventory @player) (keyword thing))
+  (contains? @(:inventory @player) (keyword thing)))
 
 (defn get-unique-player-name [name]
   (if (@*player-streams* name)
