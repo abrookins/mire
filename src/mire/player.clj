@@ -21,7 +21,7 @@
 
 (defn carrying?
   [thing player]
-  (some #{(keyword thing)} @(:inventory player)))
+  (contains? @(:inventory @player) (keyword thing)))
 
 (defn get-unique-player-name [name]
   (if (@*player-streams* name)

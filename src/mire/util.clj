@@ -6,5 +6,5 @@
      (alter from disj obj)
      (alter to conj obj))
   ([key obj from to]
-     (alter from dissoc key obj)
+     (alter from dissoc key)
      (alter to assoc key obj)))

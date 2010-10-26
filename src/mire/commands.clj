@@ -31,9 +31,10 @@
          target (rooms target-name)]
      (if target
        (do
-         (util/move-between-refs (:name @*player*) @*player*
-                            (:inhabitants @(:current-room @*player*))
-                            (:inhabitants target))
+         (util/move-between-refs (:name @*player*)
+                                 @*player*
+                                 (:inhabitants @(:current-room @*player*))
+                                 (:inhabitants target))
          (ref-set (:current-room @*player*) target)
          (look))
        "You can't go that way."))))
@@ -44,19 +45,22 @@
   (dosync
    (if (room-contains? @(:current-room @*player*) thing)
      (do (util/move-between-refs (keyword thing)
-                            (:items @(:current-room @*player*))
-                            (:inventory @*player*)
-         (str "You picked up the " thing ".")))
+                                 ((keyword thing)
+                                          @(:items @(:current-room @*player*)))
+                                 (:items @(:current-room @*player*))
+                                 (:inventory @*player*))
+         (str "You picked up the " thing "."))
      (str "There isn't any " thing " here."))))
 
 (defn discard
   "Put something down that you're carrying."
   [thing]
   (dosync
-   (if (carrying? thing)
+   (if (carrying? thing *player*)
      (do (util/move-between-refs (keyword thing)
-                            (:inventory @*player*)
-                            (:items @(:current-room @*player*)))
+                                 ((keyword thing) @(:inventory @*player*))
+                                 (:inventory @*player*)
+                                 (:items @(:current-room @*player*)))
          (str "You dropped the " thing "."))
      (str "You're not carrying a " thing "."))))
 
