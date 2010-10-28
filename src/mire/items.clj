@@ -2,8 +2,6 @@
   (:use [mire.protocols :as protocols])
   (:use [clojure.contrib.string :only [join]]))
 
-(def *items* (ref {}))
-
 (defrecord Item [name short-description long-description]
   protocols/Visible
   (short-description
