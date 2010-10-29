@@ -39,6 +39,11 @@
          (look player world))
        "You can't go that way."))))
 
+(defn- make-move-fn
+  "Make a movement function given a direction."
+  [direction]
+  (fn [player world] (move player world direction)))
+
 (defn grab
   "Pick something up."
   [player _ thing]
@@ -101,10 +106,10 @@
 ;; Command data
 
 (def commands {"move" move,
-               "north" (fn [player world] (move player world :north)),
-               "south" (fn [player world] (move player world :south)),
-               "east" (fn [player world] (move player world :east)),
-               "west" (fn [player world] (move player world :west)),
+               "north" (make-move-fn :north),
+               "south" (make-move-fn :south),
+               "east" (make-move-fn :east),
+               "west" (make-move-fn :west),
                "grab" grab
                "discard" discard
                "inventory" inventory
